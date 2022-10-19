@@ -62,13 +62,16 @@ func (r *MachineConfigReconciler) Reconcile(ctx context.Context, request ctrl.Re
 	}
 	role := m[1]
 
-	_, err = r.mcocli.MachineconfigurationV1().MachineConfigPools().Get(ctx, role, metav1.GetOptions{})
+	mcp, err := r.mcocli.MachineconfigurationV1().MachineConfigPools().Get(ctx, role, metav1.GetOptions{})
 	if kerrors.IsNotFound(err) {
 		return reconcile.Result{}, nil
 	}
 	if err != nil {
 		r.log.Error(err)
 		return reconcile.Result{}, err
+	}
+	if mcp.GetDeletionTimestamp() != nil {
+		return reconcile.Result{}, nil
 	}
 
 	err = reconcileMachineConfigs(ctx, r.arocli, r.dh, role)
