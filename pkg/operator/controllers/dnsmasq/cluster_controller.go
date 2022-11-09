@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/openshift/installer/pkg/aro/dnsmasq"
+	v1 "github.com/openshift/machine-config-operator/pkg/apis/machineconfiguration.openshift.io/v1"
 	mcoclient "github.com/openshift/machine-config-operator/pkg/generated/clientset/versioned"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -64,14 +65,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, request ctrl.Request)
 		return reconcile.Result{}, err
 	}
 
-	roles := make([]string, 0, len(mcps.Items))
-	for _, mcp := range mcps.Items {
-		if mcp.GetDeletionTimestamp() == nil {
-			roles = append(roles, mcp.Name)
-		}
-	}
-
-	err = reconcileMachineConfigs(ctx, r.arocli, r.dh, roles...)
+	err = reconcileMachineConfigs(ctx, r.arocli, r.dh, mcps.Items...)
 	if err != nil {
 		r.log.Error(err)
 		return reconcile.Result{}, err
@@ -92,7 +86,7 @@ func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func reconcileMachineConfigs(ctx context.Context, arocli aroclient.Interface, dh dynamichelper.Interface, roles ...string) error {
+func reconcileMachineConfigs(ctx context.Context, arocli aroclient.Interface, dh dynamichelper.Interface, roles ...v1.MachineConfigPool) error {
 	instance, err := arocli.AroV1alpha1().Clusters().Get(ctx, arov1alpha1.SingletonClusterName, metav1.GetOptions{})
 	if err != nil {
 		return err
@@ -100,17 +94,17 @@ func reconcileMachineConfigs(ctx context.Context, arocli aroclient.Interface, dh
 
 	var resources []kruntime.Object
 	for _, role := range roles {
-		resource, err := dnsmasq.MachineConfig(instance.Spec.Domain, instance.Spec.APIIntIP, instance.Spec.IngressIP, role, instance.Spec.GatewayDomains, instance.Spec.GatewayPrivateEndpointIP)
+		resource, err := dnsmasq.MachineConfig(instance.Spec.Domain, instance.Spec.APIIntIP, instance.Spec.IngressIP, role.Name, instance.Spec.GatewayDomains, instance.Spec.GatewayPrivateEndpointIP)
+		if err != nil {
+			return err
+		}
+
+		err = dynamichelper.SetControllerReferences([]kruntime.Object{resource}, &role)
 		if err != nil {
 			return err
 		}
 
 		resources = append(resources, resource)
-	}
-
-	err = dynamichelper.SetControllerReferences(resources, instance)
-	if err != nil {
-		return err
 	}
 
 	err = dynamichelper.Prepare(resources)
