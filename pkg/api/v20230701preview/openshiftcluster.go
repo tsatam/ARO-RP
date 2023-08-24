@@ -78,6 +78,7 @@ type ProvisioningState string
 const (
 	ProvisioningStateCreating      ProvisioningState = "Creating"
 	ProvisioningStateUpdating      ProvisioningState = "Updating"
+	ProvisioningStateCancelled     ProvisioningState = "Cancelled"
 	ProvisioningStateAdminUpdating ProvisioningState = "AdminUpdating"
 	ProvisioningStateDeleting      ProvisioningState = "Deleting"
 	ProvisioningStateSucceeded     ProvisioningState = "Succeeded"
@@ -126,6 +127,7 @@ type ServicePrincipalProfile struct {
 	ClientSecret string `json:"clientSecret,omitempty" mutable:"true"`
 }
 
+// The outbound routing strategy used to provide your cluster egress to the internet.
 type OutboundType string
 
 const (
@@ -135,7 +137,7 @@ const (
 
 // ResourceReference represents a reference to an Azure resource.
 type ResourceReference struct {
-	// The fully qualified Azure resource id.
+	// The fully qualified Azure resource id of an IP address resource.
 	ID string `json:"id,omitempty"`
 }
 
