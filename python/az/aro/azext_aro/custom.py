@@ -66,13 +66,12 @@ def aro_create(cmd,  # pylint: disable=too-many-locals
                tags=None,
                version=None,
                no_wait=False):
-    if not rp_mode_development():
-        resource_client = get_mgmt_service_client(
-            cmd.cli_ctx, ResourceType.MGMT_RESOURCE_RESOURCES)
-        provider = resource_client.providers.get('Microsoft.RedHatOpenShift')
-        if provider.registration_state != 'Registered':
-            raise UnauthorizedError('Microsoft.RedHatOpenShift provider is not registered.',
-                                    'Run `az provider register -n Microsoft.RedHatOpenShift --wait`.')
+    resource_client = get_mgmt_service_client(
+        cmd.cli_ctx, ResourceType.MGMT_RESOURCE_RESOURCES)
+    provider = resource_client.providers.get('Microsoft.RedHatOpenShift')
+    if provider.registration_state != 'Registered':
+        raise UnauthorizedError('Microsoft.RedHatOpenShift provider is not registered.',
+                                'Run `az provider register -n Microsoft.RedHatOpenShift --wait`.')
 
     validate_subnets(master_subnet, worker_subnet)
 
@@ -110,10 +109,7 @@ def aro_create(cmd,  # pylint: disable=too-many-locals
     if not rp_client_sp_id:
         raise ResourceNotFoundError("RP service principal not found.")
 
-    if rp_mode_development():
-        worker_vm_size = worker_vm_size or 'Standard_D2s_v3'
-    else:
-        worker_vm_size = worker_vm_size or 'Standard_D4s_v3'
+    worker_vm_size = worker_vm_size or 'Standard_D4s_v3'
 
     if apiserver_visibility is not None:
         apiserver_visibility = apiserver_visibility.capitalize()
@@ -420,15 +416,6 @@ def aro_update(cmd,
                        resource_name=resource_name,
                        parameters=ocUpdate)
 
-
-def rp_mode_development():
-    return os.environ.get('RP_MODE', '').lower() == 'development'
-
-
-def rp_mode_production():
-    return os.environ.get('RP_MODE', '') == ''
-
-
 def generate_random_id():
     random_id = (random.choice('abcdefghijklmnopqrstuvwxyz') +
                  ''.join(random.choice('abcdefghijklmnopqrstuvwxyz1234567890')
@@ -575,10 +562,7 @@ def cluster_application_update(cli_ctx,
 
 
 def resolve_rp_client_id():
-    if rp_mode_production():
-        return FP_CLIENT_ID
-
-    return os.environ.get('AZURE_FP_CLIENT_ID', FP_CLIENT_ID)
+    return FP_CLIENT_ID
 
 
 def ensure_resource_permissions(cli_ctx, oc, fail, sp_obj_ids):
