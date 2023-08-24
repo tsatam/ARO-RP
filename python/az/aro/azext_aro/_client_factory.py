@@ -3,7 +3,7 @@
 
 import urllib3
 
-from azext_aro.vendored_sdks.azure.mgmt.redhatopenshift.v2023_04_01 import AzureRedHatOpenShiftClient
+from azure.mgmt.redhatopenshift import AzureRedHatOpenShiftClient
 from azure.cli.core.commands.client_factory import get_mgmt_service_client
 
 

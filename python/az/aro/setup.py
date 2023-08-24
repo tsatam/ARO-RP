@@ -28,7 +28,8 @@ CLASSIFIERS = [
 ]
 
 DEPENDENCIES = [
-    'azure-cli-core'
+    'azure-cli-core',
+    'azure-mgmt-redhatopenshift~=1.3.0',
 ]
 
 with open('README.rst', 'r', encoding='utf-8') as f:
